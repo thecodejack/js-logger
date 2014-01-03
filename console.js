@@ -1,4 +1,4 @@
-/*! Javascript logging library for jQuery 0.9.0 Beta
+/*! Javascript logging library 0.9.0 Beta for jQuery
  *
  * Author: Adi Srikanth
  * Dependencies: jquery > 1.6 version
@@ -17,10 +17,10 @@
     logger.properties= {
       url : '',
       count: 5,
-      timer: false, //if timer is false, ajax request is sent
+      timer: false, //if timer is false, ajax request is sent for every 5 log calls
       timeStamp: true
     };
-    var logs = [];
+    logger.logs = [];
     var pushLogs = function(str) {
         var msg = '';
         if(logger.properties.timeStamp) {
@@ -29,12 +29,38 @@
             msg += '   ::::  ';
         }
         msg += str;
-        logs.push(msg);
+        logger.logs.push(msg);
     }
     logger.log = function(msg) {
         pushLogs(msg);
         logger.c.log(msg);
+        if(logger.logs.length===5) {
+            logger.send();
+        }
     }
+    logger.error = function(msg) {
+        pushLogs(msg);
+        logger.c.error(msg);
+        if(logger.logs.length===5) {
+            logger.send();
+        }
+    }
+    logger.send = function() {
+        var msgs = $.extend(true,[],logger.logs);
+        logger.logs.length = 0;
+        $.ajax({
+            type: "POST",
+            url: logger.properties.url,
+            data: {logs:msgs},
+            success: function(data){}
+        });
+    }
+    
+    //Also handle errors on page level
+    window.onerror = function(message, file, line_number) {
+        var msg = message + "::: File = " + file + "::: Linenumber = " + line_number;
+        pushLogs(msg);
+    };
     window.console = logger;
 }());
 
